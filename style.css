@@ -2,30 +2,18 @@
   cursor: pointer;
 }
 
-body { font: 12px Arial; }
-
-path {
-  stroke-width: 2;
-  fill: none;
-}
-
-.axis path,
-.axis line {
-  fill: none;
-  stroke: grey;
-  stroke-width: 1;
-  shape-rendering: crispEdges;
+body {
+  font-family: TimesNewRoman, "Times New Roman", Times, Baskerville, Georgia, serif;
 }
 
 div.tooltip {
   position: absolute;
   text-align: center;
-  width: 120px;
-  height: 42px;
+  width: 100px;
+  height: 60px;
   padding: 2px;
-  font: 12px sans-serif;
-  background: lightsteelblue;
-  border: 0;
-  border-radius: 8px;
+  font: 8px;
+  background: pink;
+  border-radius: 10px;
   pointer-events: none;
 }

@@ -19,7 +19,6 @@
     "Water": "#D37295"
   }
   const generations = ['(All)',1,2,3,4,5,6]
-
   const legendaryType = ['(All)','True', 'False']
 
   let data = "";
@@ -27,14 +26,14 @@
   let filteredData = [];
   let generation = "";
   let legendary = "";
-  let width = 500;
-  let heigh = 500;
+  let width = 700;
+  let heigh = 700;
 
   window.onload = function() {
     svgContainer = d3.select('body')
       .append('svg')
-      .attr('width', 500)
-      .attr('height', 500);
+      .attr('width', width)
+      .attr('height', heigh);
 
       d3.csv("pokemon.csv")
         .then((csvData) => data = csvData)
@@ -42,7 +41,7 @@
 
     legendary = d3.select('body')
         .append('select')
-        .selectAll('option')
+    legendary.selectAll('option')
         .data(legendaryType)
         .enter()
           .append('option')
@@ -51,69 +50,88 @@
 
     generation = d3.select('body')
         .append('select')
-        .selectAll('option')
+    generation.selectAll('option')
         .data(generations)
         .enter()
           .append('option')
           .html(function(d) { return d })
           .attr('value', function(d) { return d })
 
-
-    generation.on("change",makeScatterPlot());
-    legendary.on("change",makeScatterPlot());
+    generation.on("change",makeScatterPlot);
+    legendary.on("change",makeScatterPlot);
   }
 
   function makeScatterPlot() {
     let generationData = generation.property("value");
-
     let legendaryData = legendary.property("value");
-    console.log(generationData);
+    //generationData = 1;
+    //console.log(generationData);
     d3.select('svg').remove();
     svgContainer = d3.select('body')
       .append('svg')
-      .attr('width',700)
-      .attr('height',500);
+      .attr('width',width + 200)
+      .attr('height',heigh);
 
     filteredData = [];
-    data.forEach(function(row){
-      if ((row['Generation'] == generationData || generationData == '(All)') && (row['Legendary'] == legendaryData || legendaryData == '(All)')) {
+
+    for (let i = 0; i < data.length; i++) {
+      if((data[i]['Generation'] == generationData || generationData == '(All)') && (data[i]['Legendary'] == legendaryData || legendaryData == '(All)')){
         filteredData.push({
-          'Name':row['Name'],
-          'Type 1':row['Type 1'],
-          'Type 2':row['Type 2'],
-          'Total':parseInt(row["Total"]),
-          'Sp. Def':parseInt(row["Sp. Def"])
+          'Name':data[i]['Name'],
+          'Type 1':data[i]['Type 1'],
+          'Type 2':data[i]['Type 2'],
+          'Total':parseInt(data[i]["Total"]),
+          'Sp. Def':parseInt(data[i]["Sp. Def"])
         });
       }
-    })
+    }
+    makeLabel();
     let def = filteredData.map((row) => parseInt(row["Sp. Def"]))
     let total = filteredData.map((row) => parseInt(row["Total"]));
 
+    let axesLimits = findMinMax(def, total);
+    let mapFunctions = drawTicks(axesLimits);
+    plotData(mapFunctions);
+
+  }
+
+  function makeLabel() {
     svgContainer.append('text')
       .attr('x', 10)
-      .attr('y', 40)
+      .attr('y', 20)
       .style('font-size', '16pt')
       .text("Pokemon: Special Defense vs Total Stats");
 
     svgContainer.append('text')
       .attr('x', width / 2)
       .attr('y', heigh-10)
-      .style('font-size', '8pt')
+      .style('font-size', '10pt')
       .text('Sp.def');
 
     svgContainer.append('text')
       .attr('transform', 'translate(10, '+(heigh/2)+')rotate(-90)')
-      .style('font-size', '8pt')
+      .style('font-size', '10pt')
       .text('Total');
 
-    let axesLimits = findMinMax(def, total);
-
-    let mapFunctions = drawTicks(axesLimits);
-
-    plotData(mapFunctions);
-
-    makeLegend();
-
+    let i = 0;
+    let duplicate = []
+    filteredData.forEach(function(row){
+      if (duplicate.indexOf(row['Type 1']) === -1) {
+        duplicate.push(row['Type 1']);
+        svgContainer.append('rect')
+          .attr('x', width+60)
+          .attr('y', 50 + i * 15)
+          .attr('width', 10)
+          .attr('height', 10)
+          .attr('fill', colors[row['Type 1']]);
+        svgContainer.append('text')
+          .attr('x', width+80)
+          .attr('y', 60 + i * 15)
+          .style('font-size', '10pt')
+          .text(row['Type 1']);
+        i = i + 1;
+      }
+    });
   }
 
   function plotData(map) {
@@ -125,6 +143,7 @@
       .append("div")
       .attr("class", "tooltip")
       .style("opacity", 0);
+
     svgContainer.selectAll('.dots')
       .data(filteredData)
       .enter()
@@ -147,20 +166,6 @@
             .style("opacity", 0);
             // .style("cursor", "default");
         });
-
-  // var myCircle = svgContainer.selectAll(".dots")
-  //       .data(filteredData).enter().append("circle")
-  //       .attr("class", "dots")
-  //       .attr("cx", function(d, i) {return d.centerX})
-  //       .attr("cy", function(d, i) {return d.centerY})
-  //       .attr("r", 5)
-  //       .attr("stroke-width", 0)
-  //       .attr("fill", function(d, i) {return "red"})
-  //       .style("display", "block")
-  //       .style("cursor", "pointer");
-      //   circle.transition()
-  		// .duration(800).style("opacity", 1)
-  		// .attr("r", 16).ease("elastic");
   }
 
   function drawTicks(limits) {
@@ -169,24 +174,23 @@
 
     let xScale = d3.scaleLinear()
       .domain([limits.xMin-10, limits.xMax - 10])
-      .range([50, heigh - 50]);
+      .range([50, width - 50]);
 
     let xMap = function(d) { return xScale(xValue(d)); };
-
     let xAxis = d3.axisBottom().scale(xScale);
+
     svgContainer.append("g")
       .attr('transform', 'translate(0, '+(heigh-50)+')')
       .call(xAxis);
 
     let yValue = function(d) { return + d['Total']}
-
     let yScale = d3.scaleLinear()
       .domain([limits.yMax, limits.yMin - 40]) // give domain buffer
       .range([50, heigh-50]);
 
     let yMap = function (d) { return yScale(yValue(d)); };
-
     let yAxis = d3.axisLeft().scale(yScale);
+
     svgContainer.append('g')
       .attr('transform', 'translate(50, 0)')
       .call(yAxis);
@@ -201,10 +205,8 @@
   }
 
   function findMinMax(x, y) {
-
     let xMin = d3.min(x);
     let xMax = d3.max(x);
-
     let yMin = d3.min(y);
     let yMax = d3.max(y);
 
@@ -214,27 +216,6 @@
       yMin : yMin,
       yMax : yMax
     }
-  }
-  function makeLegend() {
-    let i = 0;
-    let duplicate = []
-    filteredData.forEach(function(row){
-      if (duplicate.indexOf(row['Type 1']) === -1) {
-        duplicate.push(row['Type 1']);
-        svgContainer.append('rect')
-          .attr('x', 500)
-          .attr('y', 50 + i * 15)
-          .attr('width', 10)
-          .attr('height', 10)
-          .attr('fill', colors[row['Type 1']]);
-        svgContainer.append('text')
-          .attr('x', 520)
-          .attr('y', 60 + i * 15)
-          .style('font-size', '10pt')
-          .text(row['Type 1']);
-        i = i + 1;
-      }
-    });
   }
 
 })();
